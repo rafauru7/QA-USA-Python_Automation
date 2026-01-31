@@ -1,58 +1,50 @@
 import data
 import helpers
+from selenium import webdriver
+from pages import UrbanRoutesPage
 
 
 class TestUrbanRoutes:
-    # Task 4: Check the Server is on
+    driver = None
+
     @classmethod
     def setup_class(cls):
+        # Mandatory setup for retrieving SMS code
+        from selenium.webdriver import DesiredCapabilities
+        capabilities = DesiredCapabilities.CHROME
+        capabilities["goog:loggingPrefs"] = {'performance': 'ALL'}
+
+        cls.driver = webdriver.Chrome()
+        cls.driver.implicitly_wait(10)
+
+        # Check server reachability
         if helpers.is_url_reachable(data.URBAN_ROUTES_URL):
-            print("Connected to the Urban Routes server.")
-        else:
-            print("Cannot connect to Urban Routes. Check the server is on and still running")
+            cls.driver.get(data.URBAN_ROUTES_URL)
 
-    # The 8 test functions (Task 3):
+        cls.page = UrbanRoutesPage(cls.driver)
 
-    def test_set_route(self):
-        # Add in S8
-        print("function created for set route")
-        pass
+    def test_full_taxi_order_process(self):
+        # Sequence of actions mimicking a real user
+        self.page.set_address(data.ADDRESS_FROM, data.ADDRESS_TO)
+        self.page.click_call_taxi()
+        self.page.select_supportive_plan()
 
-    def test_select_plan(self):
-        # Add in S8
-        print("function created for select plan")
-        pass
+        # Phone and SMS
+        self.page.set_phone(data.PHONE_NUMBER)
+        sms_code = helpers.retrieve_phone_code(self.driver)
+        self.page.set_sms_code(sms_code)
 
-    def test_fill_phone_number(self):
-        # Add in S8
-        print("function created for fill phone number")
-        pass
+        # Payment and Extras
+        self.page.add_card(data.CARD_NUMBER, data.CARD_CODE)
+        self.page.set_comment(data.DRIVER_COMMENT)
+        self.page.toggle_blanket()
+        self.page.add_ice_creams()
 
-    def test_fill_card(self):
-        # Add in S8
-        print("function created for fill card")
-        pass
+        # Final Verification
+        self.page.click_order()
+        assert self.driver.find_element(*self.page.car_search_modal).is_displayed()
 
-    def test_comment_for_driver(self):
-        # Add in S8
-        print("function created for comment for driver")
-        pass
-
-    def test_order_blanket_and_handkerchiefs(self):
-        # Add in S8
-        print("function created for order blanket and handkerchiefs")
-        pass
-
-    # Task 5: Preparing the ice cream order
-    def test_order_2_ice_creams(self):
-        # The print and pass must be inside the loop
-        for i in range(2):
-            # Add in S8
-            print("function created for 2 ice creams order")
-            pass
-
-    def test_car_search_model_appears(self):
-        # Test method name corrected
-        # Add in S8
-        print("function created for car search model appears")
-        pass
+    @classmethod
+    def teardown_class(cls):
+        # Clean up browser session
+        cls.driver.quit()

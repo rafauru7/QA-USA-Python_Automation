@@ -1,8 +1,7 @@
-URBAN_ROUTES_URL = ' https://cnt-175cd84f-73f3-419c-bf92-8a41c120f60b.containerhub.tripleten-services.com'
-ADDRESS_FROM = 'East 2nd Street, 601'
-ADDRESS_TO = '1300 1st St'
-PHONE_NUMBER = '+1 123 123 12 12'
-CARD_NUMBER = '1234 5678 9100'
-CARD_CODE = '1111'
-MESSAGE_FOR_DRIVER = 'Stop at the juice bar, please'
-# File with constants
+URBAN_ROUTES_URL = "https://cnt-151874ba-e743-4439-9e76-116e7cc16386.containerhub.tripleten-services.com/"
+ADDRESS_FROM = "East 2nd Street, 601"
+ADDRESS_TO = "1300 1st St"
+PHONE_NUMBER = "+1 123 456 78 90"
+CARD_NUMBER = "1234 5678 9123"
+CARD_CODE = "11"
+DRIVER_COMMENT = "Stop at the corner, please"

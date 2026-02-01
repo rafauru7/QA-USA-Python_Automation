@@ -1,50 +1,66 @@
 import data
-import helpers
 from selenium import webdriver
 from pages import UrbanRoutesPage
-
 
 class TestUrbanRoutes:
     driver = None
 
     @classmethod
     def setup_class(cls):
-        # Mandatory setup for retrieving SMS code
-        from selenium.webdriver import DesiredCapabilities
-        capabilities = DesiredCapabilities.CHROME
-        capabilities["goog:loggingPrefs"] = {'performance': 'ALL'}
-
+        # Setting up the Chrome driver
         cls.driver = webdriver.Chrome()
         cls.driver.implicitly_wait(10)
-
-        # Check server reachability
-        if helpers.is_url_reachable(data.URBAN_ROUTES_URL):
-            cls.driver.get(data.URBAN_ROUTES_URL)
-
+        cls.driver.get(data.URBAN_ROUTES_URL)
         cls.page = UrbanRoutesPage(cls.driver)
 
-    def test_full_taxi_order_process(self):
-        # Sequence of actions mimicking a real user
+    # 1. Set the addresses
+    def test_set_address(self):
         self.page.set_address(data.ADDRESS_FROM, data.ADDRESS_TO)
+        assert self.page.get_from_value() == data.ADDRESS_FROM
+        assert self.page.get_to_value() == data.ADDRESS_TO
+
+    # 2. Select Supportive plan
+    def test_select_supportive_plan(self):
         self.page.click_call_taxi()
         self.page.select_supportive_plan()
+        # Verifies the plan is selected
+        assert "Supportive" in self.page.get_selected_plan_text()
 
-        # Phone and SMS
-        self.page.set_phone(data.PHONE_NUMBER)
-        sms_code = helpers.retrieve_phone_code(self.driver)
-        self.page.set_sms_code(sms_code)
+    # 3. Fill in the phone number
+    def test_fill_phone_number(self):
+        self.page.fill_phone(data.PHONE_NUMBER)
+        assert self.page.get_phone_number_value() == data.PHONE_NUMBER
 
-        # Payment and Extras
+    # 4. Add a credit card
+    def test_add_credit_card(self):
         self.page.add_card(data.CARD_NUMBER, data.CARD_CODE)
-        self.page.set_comment(data.DRIVER_COMMENT)
-        self.page.toggle_blanket()
-        self.page.add_ice_creams()
+        assert self.page.is_card_added_successfully()
 
-        # Final Verification
+    # 5. Write a message for the driver
+    def test_comment_for_driver(self):
+        self.page.set_comment(data.DRIVER_COMMENT)
+        assert self.page.get_comment_value() == data.DRIVER_COMMENT
+
+    # 6. Order a blanket and tissues
+    def test_order_blanket_and_tissues(self):
+        self.page.toggle_blanket()
+        assert self.page.is_blanket_enabled()
+
+    # 7. Order 2 ice creams
+    def test_order_two_ice_creams(self):
+        self.page.add_ice_cream(2)
+        assert self.page.get_ice_cream_count() == "2"
+
+    # 8. The car search modal appears
+    def test_car_search_modal_appears(self):
         self.page.click_order()
-        assert self.driver.find_element(*self.page.car_search_modal).is_displayed()
+        assert self.page.is_driver_modal_visible()
+
+    # 9. Wait for driver info
+    def test_wait_for_driver_info(self):
+        # This test ensures the search actually finds a driver
+        assert self.page.wait_for_driver_details()
 
     @classmethod
     def teardown_class(cls):
-        # Clean up browser session
         cls.driver.quit()

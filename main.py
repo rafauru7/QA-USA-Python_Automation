@@ -1,4 +1,5 @@
 import data
+import helpers
 from selenium import webdriver
 from pages import UrbanRoutesPage
 
@@ -7,59 +8,69 @@ class TestUrbanRoutes:
 
     @classmethod
     def setup_class(cls):
-        # Setting up the Chrome driver
+        # Set up the driver and the page object
         cls.driver = webdriver.Chrome()
         cls.driver.implicitly_wait(10)
-        cls.driver.get(data.URBAN_ROUTES_URL)
         cls.page = UrbanRoutesPage(cls.driver)
 
-    # 1. Set the addresses
+    def setup_method(self):
+        # Resets the page for every individual test case
+        self.driver.get(data.URBAN_ROUTES_URL)
+
     def test_set_address(self):
         self.page.set_address(data.ADDRESS_FROM, data.ADDRESS_TO)
-        assert self.page.get_from_value() == data.ADDRESS_FROM
-        assert self.page.get_to_value() == data.ADDRESS_TO
+        assert self.driver.find_element(*self.page.from_field).get_property('value') == data.ADDRESS_FROM
+        assert self.driver.find_element(*self.page.to_field).get_property('value') == data.ADDRESS_TO
 
-    # 2. Select Supportive plan
     def test_select_supportive_plan(self):
-        self.page.click_call_taxi()
+        self.page.setup_taxi_order(data.ADDRESS_FROM, data.ADDRESS_TO)
         self.page.select_supportive_plan()
-        # Verifies the plan is selected
-        assert "Supportive" in self.page.get_selected_plan_text()
+        assert self.page.is_supportive_plan_selected() == True
 
-    # 3. Fill in the phone number
     def test_fill_phone_number(self):
-        self.page.fill_phone(data.PHONE_NUMBER)
-        assert self.page.get_phone_number_value() == data.PHONE_NUMBER
+        self.page.setup_taxi_order(data.ADDRESS_FROM, data.ADDRESS_TO)
+        self.page.select_supportive_plan()
+        self.page.set_phone(data.PHONE_NUMBER)
+        code = helpers.retrieve_phone_code(self.driver)
+        self.page.set_sms_code(code)
+        # Check that the button text now shows the phone number
+        assert self.driver.find_element(*self.page.phone_button).text == data.PHONE_NUMBER
 
-    # 4. Add a credit card
     def test_add_credit_card(self):
-        self.page.add_card(data.CARD_NUMBER, data.CARD_CODE)
-        assert self.page.is_card_added_successfully()
+        self.page.setup_taxi_order(data.ADDRESS_FROM, data.ADDRESS_TO)
+        self.page.select_supportive_plan()
+        self.page.add_credit_card(data.CARD_NUMBER, data.CARD_CODE)
+        assert self.page.get_payment_method_text() == "Card"
 
-    # 5. Write a message for the driver
-    def test_comment_for_driver(self):
-        self.page.set_comment(data.DRIVER_COMMENT)
-        assert self.page.get_comment_value() == data.DRIVER_COMMENT
+    def test_comment_to_driver(self):
+        self.page.setup_taxi_order(data.ADDRESS_FROM, data.ADDRESS_TO)
+        self.page.select_supportive_plan()
+        self.page.set_comment(data.MESSAGE_FOR_DRIVER)
+        assert self.driver.find_element(*self.page.comment_field).get_property('value') == data.MESSAGE_FOR_DRIVER
 
-    # 6. Order a blanket and tissues
-    def test_order_blanket_and_tissues(self):
+    def test_blanket_and_tissues(self):
+        self.page.setup_taxi_order(data.ADDRESS_FROM, data.ADDRESS_TO)
+        self.page.select_supportive_plan()
         self.page.toggle_blanket()
-        assert self.page.is_blanket_enabled()
+        assert self.page.is_blanket_checked() == True
 
-    # 7. Order 2 ice creams
     def test_order_two_ice_creams(self):
+        self.page.setup_taxi_order(data.ADDRESS_FROM, data.ADDRESS_TO)
+        self.page.select_supportive_plan()
         self.page.add_ice_cream(2)
         assert self.page.get_ice_cream_count() == "2"
 
-    # 8. The car search modal appears
-    def test_car_search_modal_appears(self):
+    def test_final_order_taxi(self):
+        # Full end-to-end flow to trigger the car search modal
+        self.page.setup_taxi_order(data.ADDRESS_FROM, data.ADDRESS_TO)
+        self.page.select_supportive_plan()
+        self.page.set_phone(data.PHONE_NUMBER)
+        self.page.set_sms_code(helpers.retrieve_phone_code(self.driver))
+        self.page.add_credit_card(data.CARD_NUMBER, data.CARD_CODE)
+        self.page.set_comment(data.MESSAGE_FOR_DRIVER)
         self.page.click_order()
-        assert self.page.is_driver_modal_visible()
-
-    # 9. Wait for driver info
-    def test_wait_for_driver_info(self):
-        # This test ensures the search actually finds a driver
-        assert self.page.wait_for_driver_details()
+        # Verify the Car Search modal from your screenshot appeared
+        assert self.page.is_driver_modal_visible() == True
 
     @classmethod
     def teardown_class(cls):

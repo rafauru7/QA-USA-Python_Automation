@@ -52,8 +52,9 @@ class TestUrbanRoutes:
         self.page.set_address(data.ADDRESS_FROM, data.ADDRESS_TO)
         self.page.click_call_taxi()
         self.page.select_supportive_plan()
-        self.page.set_comment(data.MESSAGE_FOR_DRIVER)
-        assert self.page.get_comment_value() == data.MESSAGE_FOR_DRIVER
+        self.page.set_comment(data.DRIVER_COMMENT)
+
+        assert self.page.get_comment_value() == data.DRIVER_COMMENT
 
     # 6. Order a blanket and tissues
     def test_order_blanket_and_tissues(self):

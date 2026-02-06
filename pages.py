@@ -3,18 +3,21 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 
+
 class UrbanRoutesPage:
-    # --- LOCATORS ---
+    # --- STABLE LOCATORS ---
     from_field = (By.ID, 'from')
     to_field = (By.ID, 'to')
     call_taxi_button = (By.XPATH, "//button[contains(text(), 'Call a taxi')]")
     supportive_plan_card = (By.XPATH, "//div[@class='tcard-title' and text()='Supportive']/parent::div")
     supportive_plan_title = (By.XPATH, "//div[@class='tcard-title' and text()='Supportive']")
+
     phone_button = (By.CLASS_NAME, 'np-button')
     phone_input_field = (By.ID, 'phone')
     next_button = (By.XPATH, "//button[text()='Next']")
     sms_code_field = (By.ID, 'code')
     confirm_button = (By.XPATH, "//button[text()='Confirm']")
+
     payment_method_button = (By.CLASS_NAME, 'pp-button')
     add_card_button = (By.CLASS_NAME, 'pp-plus')
     card_number_field = (By.ID, 'number')
@@ -22,14 +25,20 @@ class UrbanRoutesPage:
     link_button = (By.XPATH, "//button[text()='Link']")
     payment_method_value = (By.CLASS_NAME, 'pp-value-text')
     payment_modal_close = (By.XPATH, '//div[@class="payment-picker open"]//button[@class="close-button section-close"]')
+
     comment_field = (By.ID, 'comment')
-    blanket_switch = (By.CLASS_NAME, 'slider')
-    blanket_checkbox = (By.CSS_SELECTOR, ".switch-input")
-    ice_cream_plus = (By.XPATH, "//*[@class='counter-plus']")
+
+    # --- UPDATED ROBUST LOCATORS (As per Reviewer Recommendation) ---
+    # Finding the plus button relative to the 'Ice cream' text
+    ice_cream_plus = (By.XPATH, "//div[text()='Ice cream']/..//div[@class='counter-plus']")
     ice_cream_counter = (By.CLASS_NAME, 'counter-value')
+    # Finding the slider relative to the 'Blanket and tissues' text
+    blanket_switch = (By.XPATH, "//div[text()='Blanket and tissues']/..//span[@class='slider round']")
+    blanket_checkbox = (By.CSS_SELECTOR, ".switch-input")
+
     order_button = (By.CLASS_NAME, 'smart-button')
     driver_modal = (By.CLASS_NAME, 'order-body')
-    driver_details = (By.CLASS_NAME, 'order-number') # Example for driver assignment
+    driver_details = (By.CLASS_NAME, 'order-number')
 
     def __init__(self, driver):
         self.driver = driver
@@ -41,12 +50,10 @@ class UrbanRoutesPage:
         self.driver.find_element(*self.to_field).send_keys(to_addr)
 
     def click_call_taxi(self):
-        WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(self.call_taxi_button))
-        self.driver.find_element(*self.call_taxi_button).click()
+        WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(self.call_taxi_button)).click()
 
     def select_supportive_plan(self):
-        WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(self.supportive_plan_title))
-        self.driver.find_element(*self.supportive_plan_title).click()
+        WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(self.supportive_plan_title)).click()
 
     def fill_phone(self, phone_num):
         self.driver.find_element(*self.phone_button).click()
@@ -54,7 +61,7 @@ class UrbanRoutesPage:
         self.driver.find_element(*self.next_button).click()
 
     def set_sms_code(self, code):
-        self.driver.find_element(*self.sms_code_field).send_keys(code)
+        WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located(self.sms_code_field)).send_keys(code)
         self.driver.find_element(*self.confirm_button).click()
 
     def add_card(self, card_num, card_code):
@@ -80,7 +87,7 @@ class UrbanRoutesPage:
     def click_order(self):
         self.driver.find_element(*self.order_button).click()
 
-    # --- MISSING METHODS REQUESTED BY REVIEWER ---
+    # --- GETTERS & VERIFICATIONS ---
     def get_from_value(self):
         return self.driver.find_element(*self.from_field).get_property('value')
 
@@ -109,5 +116,5 @@ class UrbanRoutesPage:
         return WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located(self.driver_modal)).is_displayed()
 
     def wait_for_driver_details(self):
-        # Long wait for the search to complete and driver info to appear
-        return WebDriverWait(self.driver, 40).until(EC.visibility_of_element_located(self.driver_details)).is_displayed()
+        return WebDriverWait(self.driver, 40).until(
+            EC.visibility_of_element_located(self.driver_details)).is_displayed()
